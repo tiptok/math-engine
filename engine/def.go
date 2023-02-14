@@ -44,6 +44,22 @@ func init() {
 
 		"max": {-1, defMax},
 		"min": {-1, defMin},
+
+		// excel support
+		"sum":   {-1, defNone},
+		"if":    {-1, defNone},
+		"sumif": {-1, defNone},
+		"and":   {-1, defNone},
+		"or":    {-1, defNone},
+		"month": {-1, defNone},
+		"year":  {-1, defNone},
+		//"round":    {-1, defNone},
+		"rounddown": {-1, defNone},
+		"roundup":   {-1, defNone},
+		"count":     {-1, defNone},
+		"countif":   {-1, defNone},
+		//"&":         {-1, defNone},
+		"concat": {-1, defNone},
 	}
 }
 
@@ -155,4 +171,8 @@ func defNoerr(expr ...ExprAST) (r float64) {
 		}
 	}()
 	return ExprASTResult(expr[0])
+}
+
+func defNone(expr ...ExprAST) (r float64) {
+	return 0
 }

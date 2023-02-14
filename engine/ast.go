@@ -4,9 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 )
 
-var precedence = map[string]int{"+": 20, "-": 20, "*": 40, "/": 40, "%": 40, "^": 60}
+var precedence = map[string]int{
+	"+": 20, "-": 20, "*": 40, "/": 40, "%": 40, "^": 60,
+	"=": 10, ">": 10, "<": 10, "<=": 10, ">=": 10, "&": 40,
+}
 
 type ExprAST interface {
 	toStr() string
@@ -14,6 +18,17 @@ type ExprAST interface {
 
 type NumberExprAST struct {
 	Val float64
+	Str string
+}
+
+type FieldExprAST struct {
+	//Val   float64
+	Str   string
+	table string
+	field string
+}
+
+type StringArgsExprAST struct {
 	Str string
 }
 
@@ -26,6 +41,20 @@ type BinaryExprAST struct {
 type FunCallerExprAST struct {
 	Name string
 	Arg  []ExprAST
+}
+
+func (n FieldExprAST) toStr() string {
+	return fmt.Sprintf(
+		"FieldExprAST:%s",
+		n.Str,
+	)
+}
+
+func (n StringArgsExprAST) toStr() string {
+	return fmt.Sprintf(
+		"StringArgsExprAST:%s",
+		n.Str,
+	)
 }
 
 func (n NumberExprAST) toStr() string {
@@ -76,6 +105,7 @@ func NewAST(toks []*Token, s string) *AST {
 	return a
 }
 
+// ParseExpression 解析表达式
 func (a *AST) ParseExpression() ExprAST {
 	a.depth++ // called depth
 	lhs := a.parsePrimary()
@@ -171,6 +201,11 @@ func (a *AST) parseFunCallerOrConst() ExprAST {
 			Str: strconv.FormatFloat(v, 'f', 0, 64),
 		}
 	} else {
+		if strings.Contains(name, ".") {
+			return FieldExprAST{
+				Str: name,
+			}
+		}
 		a.Err = errors.New(
 			fmt.Sprintf("const `%s` is undefined\n%s",
 				name,
@@ -185,6 +220,12 @@ func (a *AST) parsePrimary() ExprAST {
 		return a.parseFunCallerOrConst()
 	case Literal:
 		return a.parseNumber()
+	case StringArgs:
+		e := StringArgsExprAST{
+			Str: a.currTok.Tok,
+		}
+		a.getNextToken()
+		return e
 	case Operator:
 		if a.currTok.Tok == "(" {
 			t := a.getNextToken()
